@@ -4,16 +4,34 @@ const app = express();
 require ('dotenv').config()
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-
+const jwt = require('jsonwebtoken');
 
 //middleware
 
-app.use(cors());
+app.use(cors({
+  origin:['http://localhost:5173'],
+  credentials:true
+}));
 app.use(express.json());
 
 
-//studyhive
-//78Pgmvh3yoFdj0TW
+const verifyToken = async(req,res,next) =>{
+  const token = req.cookies?.token;
+  if(!token){
+    return res.status(401).send({message:'not authorized'})
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,(err, decoded)=>{
+    if(err){
+      console.log(err)
+      return res.status(403).send({message:'forbidden'})
+    }
+
+    console.log('value int token', decoded)
+    next()
+
+  })
+
+}
 
 
 
@@ -34,7 +52,26 @@ async function run() {
     await client.connect();
 
     const assignmentCollection = client.db('assignmentDB').collection('allAssignment');
+    const submittedCollection = client.db('submittedAssignmentDB').collection('submitted');
 
+
+    //auth related
+
+    // app.post('/jwt', async(req,res)=>{
+    //   const user = req.body;
+    //   console.log(user);
+    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET , {expiresIn: '1h'})
+    //   res
+    //   .cookie('token', token,{
+    //     httpOnly:true,
+    //     secure:false
+    //   })
+    //   .send({success:true})
+    // })
+
+
+
+    //assignment related
     app.post('/create-assignment', async(req,res)=>{
         const createAssignment = req.body;
         console.log(createAssignment);
@@ -42,7 +79,7 @@ async function run() {
         res.send(result);
     })
 
-    app.get('/assignments',async(req,res)=>{
+    app.get('/assignments', async(req,res)=>{
         const cursor = assignmentCollection.find();
         const result = await cursor.toArray();
         res.send(result);
@@ -71,6 +108,13 @@ async function run() {
 
     })
 
+    app.delete('/assignments/:id',async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await assignmentCollection.deleteOne(query);
+      res.send(result)
+    })
+
     app.get('/pagination-assignments',async(req,res)=>{
 
       const page = parseInt(req.query.page);
@@ -83,6 +127,28 @@ async function run() {
       .toArray();
       res.send(result);
     })
+
+
+
+
+    //submitted assignment
+    app.post('/submitted',async(req,res)=>{
+      const submitted = req.body;
+      console.log(submitted);
+      const result = await submittedCollection.insertOne(submitted)
+      res.send(result);
+    })
+
+    app.get('/submitted', async(req,res)=>{
+      const cursor = submittedCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
