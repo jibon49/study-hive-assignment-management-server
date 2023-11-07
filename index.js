@@ -3,7 +3,7 @@ const cors = require('cors')
 const app = express();
 require ('dotenv').config()
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 //middleware
@@ -46,6 +46,30 @@ async function run() {
         const cursor = assignmentCollection.find();
         const result = await cursor.toArray();
         res.send(result);
+    })
+
+    app.get('/assignment/:id',async(req,res)=>{
+      const id = req.params.id;
+      console.log('Received id:', id);
+      const query = {_id: new ObjectId(id)}
+      const result = await assignmentCollection.findOne(query)
+      res.send(result);
+    })
+
+    app.put('/assignment/:id',async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id : new ObjectId(id)}
+      const options = {upset:true};
+      const updatedAssignment = req.body;
+      const assignment = {
+        $set:{
+          title:updatedAssignment.title, formattedDueDate:updatedAssignment.formattedDueDate, imageUrl:updatedAssignment.imageUrl, difficulty:updatedAssignment.difficulty, marks:updatedAssignment.marks, description:updatedAssignment.description,
+        }
+      }
+
+      const result = await assignmentCollection.updateOne(filter, assignment, options)
+      res.send(result);
+
     })
 
     // Send a ping to confirm a successful connection
