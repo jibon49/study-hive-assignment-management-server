@@ -1,7 +1,7 @@
-const  express = require('express')
+const express = require('express')
 const cors = require('cors')
 const app = express();
-require ('dotenv').config()
+require('dotenv').config()
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
@@ -9,21 +9,21 @@ const jwt = require('jsonwebtoken');
 //middleware
 
 app.use(cors({
-  origin:['http://localhost:5173'],
-  credentials:true
+  origin: ['http://localhost:5173'],
+  credentials: true
 }));
 app.use(express.json());
 
 
-const verifyToken = async(req,res,next) =>{
+const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
-  if(!token){
-    return res.status(401).send({message:'not authorized'})
+  if (!token) {
+    return res.status(401).send({ message: 'not authorized' })
   }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET,(err, decoded)=>{
-    if(err){
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
       console.log(err)
-      return res.status(403).send({message:'forbidden'})
+      return res.status(403).send({ message: 'forbidden' })
     }
 
     console.log('value int token', decoded)
@@ -72,34 +72,34 @@ async function run() {
 
 
     //assignment related
-    app.post('/create-assignment', async(req,res)=>{
-        const createAssignment = req.body;
-        console.log(createAssignment);
-        const result = await assignmentCollection.insertOne(createAssignment);
-        res.send(result);
+    app.post('/create-assignment', async (req, res) => {
+      const createAssignment = req.body;
+      console.log(createAssignment);
+      const result = await assignmentCollection.insertOne(createAssignment);
+      res.send(result);
     })
 
-    app.get('/assignments', async(req,res)=>{
-        const cursor = assignmentCollection.find();
-        const result = await cursor.toArray();
-        res.send(result);
+    app.get('/assignments', async (req, res) => {
+      const cursor = assignmentCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
     })
 
-    app.get('/assignment/:id',async(req,res)=>{
+    app.get('/assignment/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await assignmentCollection.findOne(query)
       res.send(result);
     })
 
-    app.put('/assignment/:id',async(req,res)=>{
+    app.put('/assignment/:id', async (req, res) => {
       const id = req.params.id;
-      const filter = {_id : new ObjectId(id)}
-      const options = {upset:true};
+      const filter = { _id: new ObjectId(id) }
+      const options = { upset: true };
       const updatedAssignment = req.body;
       const assignment = {
-        $set:{
-          title:updatedAssignment.title, formattedDueDate:updatedAssignment.formattedDueDate, imageUrl:updatedAssignment.imageUrl, difficulty:updatedAssignment.difficulty, marks:updatedAssignment.marks, description:updatedAssignment.description,
+        $set: {
+          title: updatedAssignment.title, formattedDueDate: updatedAssignment.formattedDueDate, imageUrl: updatedAssignment.imageUrl, difficulty: updatedAssignment.difficulty, marks: updatedAssignment.marks, description: updatedAssignment.description,
         }
       }
 
@@ -108,23 +108,23 @@ async function run() {
 
     })
 
-    app.delete('/assignments/:id',async(req,res)=>{
+    app.delete('/assignments/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await assignmentCollection.deleteOne(query);
       res.send(result)
     })
 
-    app.get('/pagination-assignments',async(req,res)=>{
+    app.get('/pagination-assignments', async (req, res) => {
 
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
 
-      console.log('pagination' ,req.query)
+      console.log('pagination', req.query)
       const result = await assignmentCollection.find()
-      .skip(page*size)
-      .limit(size)
-      .toArray();
+        .skip(page * size)
+        .limit(size)
+        .toArray();
       res.send(result);
     })
 
@@ -133,35 +133,46 @@ async function run() {
 
 
     //submitted assignment
-    app.post('/submitted',async(req,res)=>{
+    app.post('/submitted', async (req, res) => {
       const submitted = req.body;
       console.log(submitted);
       const result = await submittedCollection.insertOne(submitted)
       res.send(result);
     })
 
-    app.get('/submitted', async(req,res)=>{
+    app.get('/submitted', async (req, res) => {
       const cursor = submittedCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     })
 
-    app.patch('/submitted/:id',async(req,res)=>{
+    app.patch('/submitted/:id', async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const updatedSubmitted = req.body;
       console.log(updatedSubmitted);
 
       const updateDoc = {
-        $set:{
+        $set: {
           status: updatedSubmitted.status,
           obtainedMarks: updatedSubmitted.obtainedMarks,
-          examinersFeedback:updatedSubmitted.examinersFeedback
+          examinersFeedback: updatedSubmitted.examinersFeedback
         },
       };
-      const result = await submittedCollection.updateOne(filter,updateDoc);
+      const result = await submittedCollection.updateOne(filter, updateDoc);
       res.send(result)
 
+    })
+
+
+    app.get('/my-assignment', async (req, res) => {
+      console.log(req.query.email);
+      let query = {};
+      if (req.query?.email) {
+        query = { currentUserEmail: req.query.email }
+      }
+      const result = await submittedCollection.find(query).toArray();
+      res.send(result)
     })
 
 
@@ -180,10 +191,10 @@ run().catch(console.dir);
 
 
 
-app.get('/',(req,res)=>{
-    res.send('study hive server is running on background')
+app.get('/', (req, res) => {
+  res.send('study hive server is running on background')
 })
 
-app.listen(port,()=>{
-    console.log('study hive running')
+app.listen(port, () => {
+  console.log('study hive running')
 })
