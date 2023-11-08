@@ -131,6 +131,7 @@ async function run() {
 
 
 
+
     //submitted assignment
     app.post('/submitted',async(req,res)=>{
       const submitted = req.body;
@@ -143,6 +144,24 @@ async function run() {
       const cursor = submittedCollection.find();
       const result = await cursor.toArray();
       res.send(result);
+    })
+
+    app.patch('/submitted/:id',async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updatedSubmitted = req.body;
+      console.log(updatedSubmitted);
+
+      const updateDoc = {
+        $set:{
+          status: updatedSubmitted.status,
+          obtainedMarks: updatedSubmitted.obtainedMarks,
+          examinersFeedback:updatedSubmitted.examinersFeedback
+        },
+      };
+      const result = await submittedCollection.updateOne(filter,updateDoc);
+      res.send(result)
+
     })
 
 
