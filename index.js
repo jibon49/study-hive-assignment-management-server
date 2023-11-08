@@ -5,18 +5,27 @@ require('dotenv').config()
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 
 //middleware
 
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: [
+    // 'http://localhost:5173'
+    'https://group-assignment-e7f79.web.app',
+    'https://group-assignment-e7f79.firebaseapp.com'
+  ],
+
+
+
   credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 
 const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token;
+  const token = req?.cookies?.token;
   if (!token) {
     return res.status(401).send({ message: 'not authorized' })
   }
@@ -26,6 +35,7 @@ const verifyToken = async (req, res, next) => {
       return res.status(403).send({ message: 'forbidden' })
     }
 
+    req.user = decoded;
     console.log('value int token', decoded)
     next()
 
@@ -49,7 +59,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     const assignmentCollection = client.db('assignmentDB').collection('allAssignment');
     const submittedCollection = client.db('submittedAssignmentDB').collection('submitted');
@@ -57,18 +67,24 @@ async function run() {
 
     //auth related
 
-    // app.post('/jwt', async(req,res)=>{
-    //   const user = req.body;
-    //   console.log(user);
-    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET , {expiresIn: '1h'})
-    //   res
-    //   .cookie('token', token,{
-    //     httpOnly:true,
-    //     secure:false
-    //   })
-    //   .send({success:true})
-    // })
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+      res
+        .cookie('token', token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none'
+        })
+        .send({ success: true })
+    })
 
+    app.post('/logout', async (req, res) => {
+      const user = req.body;
+      console.log('log out', user)
+      res.clearCookie('token', { maxAge: 0 }).send({ success: true })
+    })
 
 
     //assignment related
@@ -140,7 +156,7 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/submitted', async (req, res) => {
+    app.get('/submitted', verifyToken, async (req, res) => {
       const cursor = submittedCollection.find();
       const result = await cursor.toArray();
       res.send(result);
@@ -165,8 +181,11 @@ async function run() {
     })
 
 
-    app.get('/my-assignment', async (req, res) => {
+    app.get('/my-assignment', verifyToken, async (req, res) => {
       console.log(req.query.email);
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: 'forbidden' })
+      }
       let query = {};
       if (req.query?.email) {
         query = { currentUserEmail: req.query.email }
@@ -174,10 +193,6 @@ async function run() {
       const result = await submittedCollection.find(query).toArray();
       res.send(result)
     })
-
-
-
-
 
 
     // Send a ping to confirm a successful connection
