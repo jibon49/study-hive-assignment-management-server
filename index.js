@@ -11,9 +11,9 @@ const cookieParser = require('cookie-parser')
 
 app.use(cors({
   origin: [
-    // 'http://localhost:5173'
-    'https://group-assignment-e7f79.web.app',
-    'https://group-assignment-e7f79.firebaseapp.com'
+    'http://localhost:5173'
+    // 'https://group-assignment-e7f79.web.app',
+    // 'https://group-assignment-e7f79.firebaseapp.com'
   ],
 
 
