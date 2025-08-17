@@ -12,13 +12,10 @@ const cookieParser = require('cookie-parser')
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://study-hive-assignment-management-cl.vercel.app',
-    // 'https://group-assignment-e7f79.web.app',
-    // 'https://group-assignment-e7f79.firebaseapp.com'
+    'https://study-hive-assignment-management-cl.vercel.app', // ADD THIS LINE
+    'https://group-assignment-e7f79.web.app',
+    'https://group-assignment-e7f79.firebaseapp.com'
   ],
-
-
-
   credentials: true
 }));
 app.use(express.json());
@@ -75,8 +72,8 @@ async function run() {
       res
         .cookie('token', token, {
           httpOnly: true,
-          secure: true,
-          sameSite: 'none'
+          secure: process.env.NODE_ENV === 'production', // Dynamic based on environment
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
         })
         .send({ success: true })
     })
