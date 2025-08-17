@@ -11,7 +11,8 @@ const cookieParser = require('cookie-parser')
 
 app.use(cors({
   origin: [
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'https://study-hive-assignment-management-cl.vercel.app',
     // 'https://group-assignment-e7f79.web.app',
     // 'https://group-assignment-e7f79.firebaseapp.com'
   ],
